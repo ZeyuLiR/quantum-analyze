@@ -1,0 +1,41 @@
+# A股 量价多因子选股（月度调仓，10 只等权）
+[account]
+initial_cash = 1_000_000
+
+[data]
+sources = { CN = ["akshare", "baostock", "tushare"] }
+cache_dir = "data_cache"
+[data.options.tushare]
+# token 建议放环境变量 TUSHARE_TOKEN，不要写进仓库
+
+[universe]
+# 示例股票池（部分沪深300成分股），可替换为你自己的股票池
+symbols = ["600519", "601318", "600036", "000858", "000333", "600276", "601166", "000651",
+           "600900", "601888", "600887", "002415", "300750", "601012", "600030", "000001",
+           "002594", "600309", "601899", "600031", "002475", "300059", "601628", "600585",
+           "000568", "600438", "002304", "601088", "600690", "601225"]
+benchmark = "000300.SH"
+
+[backtest]
+start = "2017-01-01"
+
+[strategy]
+name = "multi_factor"
+[strategy.params]
+top_k = 10
+rebalance = "M"
+w_momentum = 1.0
+w_lowvol = 1.0
+w_reversal = 0.5
+market_symbol = "510300"       # 大盘择时：沪深300ETF 跌破 120 日均线时空仓
+market_ma = 120
+
+[risk]
+max_position_weight = 0.15
+stop_loss = 0.15
+max_drawdown_halt = 0.20
+
+[trading]
+gateway = "qmt"
+dry_run = true
+state_file = "state/cn_multi_factor.json"

@@ -1,0 +1,20 @@
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+build/
+dist/
+.venv/
+# runtime output
+data_cache/
+reports/
+state/
+examples/data_cache/
+examples/reports/
+examples/state/
+*.tmp
+# secrets
+.env
+*.secret.toml
+# user configs created by the UI (may contain account details)
+configs/

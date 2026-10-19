@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "quantum-analyze"
+version = "0.1.0"
+description = "中低频量化交易系统：A股/港股/美股 回测、模拟盘、实盘"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.24", "pandas>=2.0"]
+
+[project.optional-dependencies]
+# data sources
+akshare = ["akshare"]
+baostock = ["baostock"]
+tushare = ["tushare"]
+yfinance = ["yfinance"]
+# brokers (futu-api also provides HK/US market data)
+ibkr = ["ib_async"]
+futu = ["futu-api"]
+tiger = ["tigeropen"]
+longbridge = ["longport"]
+easytrader = ["easytrader"]
+# miniQMT's xtquant is shipped with the broker's QMT client, not on PyPI
+cn = ["akshare", "baostock"]
+global = ["yfinance", "ib_async", "futu-api"]
+all = ["akshare", "baostock", "tushare", "yfinance", "ib_async", "futu-api", "tigeropen", "longport"]
+dev = ["pytest"]
+
+[project.scripts]
+qa = "quantum_analyze.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["quantum_analyze*"]
+
+[tool.setuptools.package-data]
+quantum_analyze = ["webui/static/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

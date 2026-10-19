@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>量化工作台</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M1 13l4-5 3 3 6-8' stroke='%232563eb' stroke-width='2' fill='none'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#f6f7f9;--panel:#fff;--fg:#1f2328;--muted:#656d76;--line:#d8dee4;--accent:#2563eb;--accent-fg:#fff;
+--ok:#15803d;--warn:#b45309;--bad:#dc2626;--soft:#eef2ff;--code:#f3f4f6}
+@media (prefers-color-scheme:dark){:root{--bg:#0d1117;--panel:#161b22;--fg:#e6edf3;--muted:#8d96a0;--line:#30363d;
+--accent:#3b82f6;--ok:#4ade80;--warn:#fbbf24;--bad:#f87171;--soft:#1e293b;--code:#0b0f14}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.6 -apple-system,"Microsoft YaHei","PingFang SC",sans-serif}
+header{background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.bar{max-width:1180px;margin:0 auto;padding:0 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.brand{font-weight:600;font-size:16px;padding:12px 0}
+nav{display:flex;gap:2px;overflow-x:auto}
+nav button{border:0;background:none;color:var(--muted);padding:14px 12px;font-size:14px;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+nav button.on{color:var(--fg);border-bottom-color:var(--accent);font-weight:600}
+main{max-width:1180px;margin:0 auto;padding:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:16px}
+.card h2{font-size:16px;margin:0 0 12px}
+.card h3{font-size:14px;margin:16px 0 8px}
+.muted{color:var(--muted)}.small{font-size:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.grid.k{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+input,select,textarea{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;width:100%}
+textarea{min-height:90px;font-family:Consolas,Menlo,monospace;font-size:13px}
+input[type=checkbox]{width:auto}
+a.b{display:inline-block;text-decoration:none}
+button.b,a.b{font:inherit;border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:6px;padding:8px 14px;cursor:pointer}
+button.b:hover,a.b:hover{border-color:var(--accent)}
+button.p{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+button.d{background:var(--bad);border-color:var(--bad);color:#fff}
+button:disabled{opacity:.5;cursor:not-allowed}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.kpi{border:1px solid var(--line);border-radius:6px;padding:8px 10px;background:var(--bg)}
+.kpi span{display:block;font-size:12px;color:var(--muted)}.kpi b{font-size:16px}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;border:1px solid var(--line)}
+.ok{color:var(--ok)}.bad{color:var(--bad)}.warn{color:var(--warn)}
+.alert{border:1px solid var(--warn);background:color-mix(in srgb,var(--warn) 10%,transparent);border-radius:6px;padding:10px 12px;margin:8px 0}
+.alert.r{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 10%,transparent)}
+.info{border-left:3px solid var(--accent);background:var(--soft);padding:8px 12px;border-radius:4px;margin:8px 0}
+pre.log{background:var(--code);border:1px solid var(--line);border-radius:6px;padding:10px;max-height:320px;overflow:auto;font-size:12px;white-space:pre-wrap;margin:8px 0}
+table{border-collapse:collapse;width:100%;font-size:13px}
+td,th{border-bottom:1px solid var(--line);padding:5px 8px;text-align:left;white-space:nowrap}
+.wrap{overflow-x:auto}
+iframe{width:100%;height:900px;border:1px solid var(--line);border-radius:6px;background:#fff}
+.steps{counter-reset:s}.step{display:flex;gap:12px;margin:10px 0}
+.step:before{counter-increment:s;content:counter(s);flex:none;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600}
+.hidden{display:none!important}
+.doc{line-height:1.75}.doc table{margin:8px 0}.doc code{background:var(--code);padding:1px 4px;border-radius:4px}
+.doc pre{background:var(--code);padding:10px;border-radius:6px;overflow:auto}.doc blockquote{margin:8px 0;padding:4px 12px;border-left:3px solid var(--line);color:var(--muted)}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:r 1s linear infinite;vertical-align:-2px}
+@keyframes r{to{transform:rotate(360deg)}}
+@media (max-width:640px){main{padding:12px}.card{padding:12px}iframe{height:640px}}
+</style>
+</head>
+<body>
+<header><div class="bar"><div class="brand">📈 量化工作台</div>
+<nav id="nav">
+<button data-p="home" class="on">开始</button><button data-p="config">策略配置</button>
+<button data-p="backtest">回测分析</button><button data-p="paper">模拟盘</button>
+<button data-p="live">实盘</button><button data-p="docs">说明书</button>
+</nav></div></header>
+<main>
+
+<!-- ======================= 开始 ======================= -->
+<section id="p-home">
+<div class="card"><h2>三步开始</h2>
+<div class="steps">
+<div class="step"><div><b>安装数据源</b><br><span class="muted">在下方“环境检查”里点击安装 <b>akshare</b>（A股）和 <b>yfinance</b>（美股）。</span></div></div>
+<div class="step"><div><b>选一个模板，跑回测</b><br><span class="muted">“回测分析”页选择 <b>cn_etf_rotation</b>（A股 ETF 轮动）或 <b>quickstart</b>（离线体验），点“运行回测”。</span></div></div>
+<div class="step"><div><b>改参数、存成自己的配置</b><br><span class="muted">“策略配置”页修改股票池、策略和风控，保存后回测；满意了再到“模拟盘”每天运行。</span></div></div>
+</div>
+<div class="row"><button class="b p" onclick="go('backtest')">去回测</button><button class="b" onclick="go('docs')">看说明书</button></div>
+</div>
+<div class="card"><h2>环境检查</h2>
+<p class="muted small" id="envinfo"></p>
+<div class="row small"><label><input type="checkbox" id="mirror" checked> 使用国内镜像（清华）安装，更快</label></div>
+<div class="wrap"><table id="envtbl"></table></div>
+<pre class="log hidden" id="envlog"></pre>
+</div>
+</section>
+
+<!-- ======================= 策略配置 ======================= -->
+<section id="p-config" class="hidden">
+<div class="card"><h2>选择配置</h2>
+<div class="row"><select id="cfgsel" style="max-width:420px"></select>
+<button class="b" onclick="loadCfg(val('cfgsel'))">载入</button>
+<button class="b" onclick="newCfg()">新建空白配置</button></div>
+<p class="muted small">示例模板不会被修改，保存时会另存到 configs 文件夹。</p>
+</div>
+<div id="cfgform" class="hidden">
+<div class="card"><h2>基本信息</h2><div class="grid">
+<label class="f">配置名称（保存的文件名）<input id="c_name"></label>
+<label class="f">初始资金<input id="c_cash" type="number" step="1000"></label>
+<label class="f">记账货币<select id="c_cur"><option>CNY</option><option>HKD</option><option>USD</option></select></label>
+<label class="f">港币汇率（1 HKD = ? 记账货币）<input id="c_fxhkd" type="number" step="0.0001" placeholder="跨币种时填写"></label>
+<label class="f">美元汇率（1 USD = ? 记账货币）<input id="c_fxusd" type="number" step="0.0001" placeholder="跨币种时填写"></label>
+</div></div>
+
+<div class="card"><h2>股票池</h2>
+<p class="muted small">每行一个或用逗号分隔。A股写 6 位代码（600519），港股写 5 位（00700），美股写代码（AAPL）。</p>
+<div class="grid"><label class="f" style="grid-column:1/-1">股票 / ETF 列表<textarea id="c_syms"></textarea></label>
+<label class="f">基准（对比用，可空）<input id="c_bench" placeholder="如 000300.SH / SPY"></label></div>
+</div>
+
+<div class="card"><h2>数据源</h2>
+<p class="muted small">按顺序尝试，前一个失败自动换下一个。可选：<span id="dslist"></span></p>
+<div class="grid">
+<label class="f">A股<input id="c_ds_cn" placeholder="akshare, baostock"></label>
+<label class="f">港股<input id="c_ds_hk" placeholder="yfinance, akshare"></label>
+<label class="f">美股<input id="c_ds_us" placeholder="yfinance"></label>
+<label class="f">K线周期<select id="c_freq"><option value="1d">日线</option><option value="60m">60 分钟</option><option value="30m">30 分钟</option><option value="15m">15 分钟</option><option value="5m">5 分钟</option></select></label>
+</div></div>
+
+<div class="card"><h2>策略</h2>
+<label class="f" style="max-width:420px">选择策略<select id="c_strat" onchange="renderParams()"></select></label>
+<div class="info" id="stratinfo"></div>
+<h3>策略参数</h3><div class="grid" id="params"></div>
+</div>
+
+<div class="card"><h2>回测设置</h2><div class="grid">
+<label class="f">开始日期<input id="c_start" type="date"></label>
+<label class="f">结束日期（空=到最新）<input id="c_end" type="date"></label>
+<label class="f">成交方式<select id="c_fill"><option value="next_open">次日开盘成交（推荐，无未来函数）</option><option value="close">当日收盘成交（偏乐观）</option></select></label>
+</div></div>
+
+<div class="card"><h2>风控</h2><p class="muted small">比例填小数，例如 0.1 表示 10%。0 表示关闭。</p><div class="grid" id="risk"></div></div>
+
+<div class="card"><h2>交易执行（模拟盘 / 实盘）</h2><div class="grid">
+<label class="f">券商接口<select id="c_gw"></select></label>
+<label class="f">保护限价（市价单转限价，如 0.01）<input id="c_limit" type="number" step="0.001"></label>
+<label class="f">模式<select id="c_dry"><option value="true">预演：只打印委托（安全）</option><option value="false">真实下单</option></select></label>
+<label class="f" style="grid-column:1/-1">券商连接参数（每行 key = value，例如 port = 7497）<textarea id="c_gwopts" style="min-height:70px"></textarea></label>
+</div></div>
+
+<div class="card"><div class="row">
+<button class="b p" onclick="saveCfg(false)">保存配置</button>
+<button class="b" onclick="saveCfg(true)">保存并去回测</button>
+<button class="b" onclick="toggle('rawbox')">高级：直接编辑 TOML 原文</button>
+<span id="savemsg" class="small"></span></div>
+<div id="rawbox" class="hidden"><p class="muted small">直接编辑后点“保存 TOML 原文”。会覆盖上面表单的内容。</p>
+<textarea id="c_raw" style="min-height:320px"></textarea>
+<div class="row"><button class="b" onclick="saveRaw()">保存 TOML 原文</button></div></div>
+</div>
+</div>
+</section>
+
+<!-- ======================= 回测分析 ======================= -->
+<section id="p-backtest" class="hidden">
+<div class="card"><h2>回测分析</h2>
+<div class="grid">
+<label class="f">配置<select id="btsel" class="cfgpick"></select></label>
+<label class="f">开始日期（可空=按配置）<input id="bt_start" type="date"></label>
+<label class="f">结束日期（可空=按配置）<input id="bt_end" type="date"></label>
+</div>
+<div class="row" style="margin-top:12px">
+<button class="b p" id="btn_bt" onclick="runBt('backtest')">运行回测</button>
+<button class="b" onclick="runBt('optimize')">参数优化</button>
+<button class="b" onclick="runBt('walkforward')">样本外检验</button>
+<button class="b" onclick="runBt('fetch')">只下载数据</button>
+<label class="small"><input type="checkbox" id="bt_refresh"> 重新下载数据</label>
+<button class="b" onclick="go('config');loadCfg(val('btsel'))">编辑此配置</button>
+</div>
+<details class="small" style="margin-top:8px"><summary class="muted">参数优化 / 样本外检验设置</summary>
+<div class="grid" style="margin-top:8px">
+<label class="f">参数网格（空=策略默认，如 lookback=20,60;top_k=1,2）<input id="bt_grid"></label>
+<label class="f">训练窗口（月）<input id="bt_train" type="number" value="36"></label>
+<label class="f">检验窗口（月）<input id="bt_test" type="number" value="12"></label>
+</div></details>
+</div>
+<div class="card hidden" id="btjob"><h2 id="btjobtitle">运行中</h2>
+<div id="btstatus" class="small"></div>
+<details id="btlogbox"><summary class="muted small">运行日志</summary><pre class="log" id="btlog"></pre></details>
+<div id="btresult"></div>
+</div>
+</section>
+
+<!-- ======================= 模拟盘 ======================= -->
+<section id="p-paper" class="hidden">
+<div class="card"><h2>模拟盘</h2>
+<p class="muted">用内置撮合模拟真实交易，不需要券商账户。每个交易日<b>收盘后</b>运行一次：先用开盘价成交上次生成的委托，再按收盘数据生成下一交易日的委托。</p>
+<div class="grid"><label class="f">配置<select id="ppsel" class="cfgpick" onchange="loadState('pp')"></select></label></div>
+<div class="row" style="margin-top:12px">
+<button class="b p" onclick="runPaper()">运行一次（处理到最新交易日）</button>
+<span class="muted small">每日自动：</span><input id="pp_at" type="time" value="15:30" style="width:120px">
+<button class="b" id="pp_sched" onclick="schedule()">开始每日自动运行</button>
+<button class="b" onclick="loadState('pp')">刷新</button>
+</div>
+<p class="small muted">每日自动运行需要保持本窗口和黑色命令行窗口打开；也可以用 Windows 任务计划程序每天运行 <code>qa paper -c 配置文件</code>。</p>
+</div>
+<div class="card hidden" id="ppjob"><h2>运行结果</h2><div id="ppstatus" class="small"></div><details><summary class="muted small">运行日志</summary><pre class="log" id="pplog"></pre></details></div>
+<div class="card"><h2>模拟账户</h2><div id="ppstate" class="muted">请选择配置</div></div>
+</section>
+
+<!-- ======================= 实盘 ======================= -->
+<section id="p-live" class="hidden">
+<div class="card"><h2>实盘</h2>
+<div class="alert r"><b>真金白银，请务必小心。</b>建议顺序：回测 → 样本外检验 → 模拟盘至少 1 个月 → 券商模拟账户（IBKR 模拟端口 / 富途模拟）→ 小资金实盘。软件不构成投资建议，盈亏自负。</div>
+<div class="grid"><label class="f">配置<select id="lvsel" class="cfgpick" onchange="loadState('lv')"></select></label></div>
+<div id="lvinfo" class="info small"></div>
+<h3>第 1 步：预演（安全）</h3>
+<p class="muted small">连接券商读取持仓和资金，计算今天要下的单，<b>只显示不发送</b>。</p>
+<button class="b p" onclick="runLive(false)">预演委托</button>
+<h3>第 2 步：真实下单</h3>
+<div class="alert">会立刻向券商发送委托。请先确认预演结果无误、券商客户端（TWS / OpenD / miniQMT）已登录。</div>
+<div class="grid">
+<label class="f"><span><input type="checkbox" id="lv_ck"> 我已核对预演委托，并了解实盘风险</span></label>
+<label class="f">在此输入“确认下单”<input id="lv_confirm" placeholder="确认下单"></label>
+</div>
+<div class="row" style="margin-top:8px"><button class="b d" onclick="runLive(true)">发送真实委托</button></div>
+</div>
+<div class="card hidden" id="lvjob"><h2>运行结果</h2><div id="lvstatus" class="small"></div><details><summary class="muted small">运行日志</summary><pre class="log" id="lvlog"></pre></details></div>
+<div class="card"><h2>实盘账户记录</h2><div id="lvstate" class="muted">请选择配置</div></div>
+</section>
+
+<!-- ======================= 说明书 ======================= -->
+<section id="p-docs" class="hidden">
+<div class="card"><div class="row" id="doclist"></div></div>
+<div class="card doc" id="doc"></div>
+</section>
+</main>
+
+<script>
+const TOKEN = "__TOKEN__";
+let META = null, CUR = null, RISK_KEYS = ["max_position_weight","stop_loss","trailing_stop","take_profit",
+  "max_holding_days","max_drawdown_halt","halt_cooldown_days","max_order_value"];
+const $ = id => document.getElementById(id);
+const val = id => $(id).value;
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const toggle = id => $(id).classList.toggle("hidden");
+
+async function api(path, body) {
+  const opt = body === undefined ? {} : {method: "POST", headers: {"Content-Type": "application/json", "X-QA-Token": TOKEN}, body: JSON.stringify(body)};
+  const r = await fetch(path, opt);
+  const j = await r.json();
+  if (!r.ok || j.error) throw new Error(j.error || r.statusText);
+  return j;
+}
+function go(p) {
+  document.querySelectorAll("#nav button").forEach(b => b.classList.toggle("on", b.dataset.p === p));
+  document.querySelectorAll("main > section").forEach(s => s.classList.toggle("hidden", s.id !== "p-" + p));
+  try { localStorage.setItem("qa_page", p); } catch (e) {}
+  if (p === "paper") loadState("pp");
+  if (p === "live") loadState("lv");
+  if (p === "docs" && !$("doc").innerHTML) showDoc(META.docs.find(d => d.includes("教程")) || META.docs[0]);
+}
+document.querySelectorAll("#nav button").forEach(b => b.onclick = () => go(b.dataset.p));
+
+// ------------------------------------------------------------------ meta / env
+async function loadMeta() {
+  META = await api("/api/meta");
+  $("envinfo").textContent = `Python ${META.python} · 软件 v${META.version} · 工作目录 ${META.root}`;
+  $("envtbl").innerHTML = "<tr><th>组件</th><th>用途</th><th>状态</th></tr>" + META.env.map(e =>
+    `<tr><td>${esc(e.package || e.module)}</td><td>${esc(e.desc)}</td><td>${e.installed ? '<span class="ok">✓ 已安装</span>' :
+      (e.pip ? `<button class="b" onclick="install('${e.module}', this)">安装</button>` : '<span class="muted">需随券商客户端安装</span>')}</td></tr>`).join("");
+  const opts = ["<optgroup label='我的配置'>", ...META.configs.filter(c => c.kind === "我的配置").map(c => `<option value="${esc(c.path)}">${esc(c.name)}</option>`),
+    "</optgroup><optgroup label='示例模板'>", ...META.configs.filter(c => c.kind === "示例模板").map(c => `<option value="${esc(c.path)}">${esc(c.name)}</option>`), "</optgroup>"].join("");
+  for (const id of ["cfgsel", "btsel", "ppsel", "lvsel"]) {
+    const old = $(id).value; $(id).innerHTML = opts;
+    if (old && [...$(id).options].some(o => o.value === old)) $(id).value = old;
+    else { const q = [...$(id).options].find(o => o.value.includes("cn_etf_rotation")); if (q && !META.configs.some(c => c.kind === "我的配置")) $(id).value = q.value; }
+  }
+  $("c_strat").innerHTML = META.strategies.map(s => `<option value="${s.name}">${esc(s.title)}（${s.name}）</option>`).join("");
+  $("c_gw").innerHTML = Object.entries(META.gateways).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join("");
+  $("dslist").textContent = META.data_sources.join("、");
+  $("doclist").innerHTML = META.docs.map(d => `<button class="b" onclick="showDoc('${esc(d)}')">${esc(d.replace(".md", ""))}</button>`).join("");
+}
+async function install(mod, btn) {
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> 安装中';
+  const log = $("envlog"); log.classList.remove("hidden"); log.textContent = "";
+  const job = await api("/api/run", {action: "install", module: mod, mirror: $("mirror").checked});
+  await follow(job.id, log, null);
+  await loadMeta();
+}
+
+// ------------------------------------------------------------------ jobs
+async function follow(id, logEl, statusEl) {
+  let since = 0, job;
+  while (true) {
+    job = await api(`/api/job?id=${id}&since=${since}`);
+    if (job.lines.length) { logEl.textContent += job.lines.join("\n") + "\n"; logEl.scrollTop = logEl.scrollHeight; since = job.total; }
+    if (statusEl) statusEl.innerHTML = job.status === "running" ? `<span class="spin"></span> 运行中… 已用 ${Math.round(Date.now()/1000 - job.started)} 秒` :
+      job.status === "done" ? '<span class="ok">✓ 完成</span>' : job.status === "stopped" ? '<span class="warn">已停止</span>' : '<span class="bad">✗ 失败，请查看日志</span>';
+    if (job.status !== "running") return job;
+    await new Promise(r => setTimeout(r, 800));
+  }
+}
+function lastError(text) {
+  const m = text.match(/出错了: ([^\n]+)/); return m ? m[1] : "";
+}
+
+// ------------------------------------------------------------------ config editor
+function setV(id, v) { $(id).value = v ?? ""; }
+function newCfg() {
+  fillForm({name: "my_strategy", path: null, config: {account: {initial_cash: 200000, base_currency: "CNY"},
+    data: {sources: {CN: ["akshare", "baostock"], HK: ["yfinance", "akshare"], US: ["yfinance"]}, cache_dir: "data_cache"},
+    universe: {symbols: ["510300", "510500", "159915", "513100", "518880"], benchmark: "000300.SH"},
+    backtest: {start: "2016-01-01", fill_at: "next_open"}, strategy: {name: "momentum_rotation", params: {}},
+    risk: {}, trading: {gateway: "sim", dry_run: true}}});
+}
+async function loadCfg(path) {
+  try { const r = await api("/api/config?path=" + encodeURIComponent(path)); fillForm(r); }
+  catch (e) { alert("载入失败：" + e.message); }
+}
+function fillForm(r) {
+  CUR = r; const c = r.config;
+  $("cfgform").classList.remove("hidden");
+  setV("c_name", r.path && r.path.startsWith("configs/") ? r.name : "my_" + r.name);
+  const a = c.account || {}, d = c.data || {}, u = c.universe || {}, b = c.backtest || {}, t = c.trading || {};
+  setV("c_cash", a.initial_cash ?? 1000000); setV("c_cur", a.base_currency || "CNY");
+  setV("c_fxhkd", (a.fx_rates || {}).HKD); setV("c_fxusd", (a.fx_rates || {}).USD);
+  setV("c_syms", (u.symbols || []).join("\n")); setV("c_bench", u.benchmark);
+  const src = d.sources || "synthetic";
+  const per = typeof src === "string" ? {CN: [src], HK: [src], US: [src]} : Array.isArray(src) ? {CN: src, HK: src, US: src} : src;
+  setV("c_ds_cn", (per.CN || []).join(", ")); setV("c_ds_hk", (per.HK || []).join(", ")); setV("c_ds_us", (per.US || []).join(", "));
+  setV("c_freq", d.frequency || "1d");
+  setV("c_strat", (c.strategy || {}).name || "buy_hold"); renderParams((c.strategy || {}).params || {});
+  setV("c_start", b.start); setV("c_end", b.end); setV("c_fill", b.fill_at || "next_open");
+  const risk = c.risk || {};
+  $("risk").innerHTML = RISK_KEYS.map(k => `<label class="f">${esc(META.param_labels[k] || k)}<input data-k="${k}" type="number" step="any" value="${risk[k] ?? ""}" placeholder="${k === "max_position_weight" ? "1" : "0"}"></label>`).join("");
+  setV("c_gw", t.gateway || "sim"); setV("c_limit", t.limit_offset); setV("c_dry", String(t.dry_run ?? true));
+  setV("c_gwopts", Object.entries(t.gateway_options || {}).map(([k, v]) => `${k} = ${Array.isArray(v) ? v.join(", ") : v}`).join("\n"));
+  setV("c_raw", r.text || "");
+  $("savemsg").textContent = r.path ? `已载入 ${r.path}` : "新配置（尚未保存）";
+}
+function renderParams(values) {
+  const s = META.strategies.find(x => x.name === val("c_strat"));
+  if (values === undefined || values instanceof Event) values = {};
+  $("stratinfo").innerHTML = `<b>${esc(s.title)}</b>：${esc(s.summary)}<br><span class="muted">适合：${esc(s.fit)}　风险：${esc(s.risk)}</span>`;
+  $("params").innerHTML = Object.entries(s.params).map(([k, dv]) => {
+    const v = values[k] ?? dv, lab = esc(META.param_labels[k] || k);
+    const type = typeof dv === "number" ? 'type="number" step="any"' : "";
+    return `<label class="f">${lab}<input data-k="${k}" data-t="${typeof dv}" ${type} value="${esc(v)}"></label>`;
+  }).join("") || '<span class="muted">此策略没有参数</span>';
+}
+function list(s) { return s.split(/[\s,，;；]+/).map(x => x.trim()).filter(Boolean); }
+function num(id) { const v = val(id); return v === "" ? undefined : Number(v); }
+function collect() {
+  const c = structuredClone(CUR.config);
+  c.account = {...(c.account || {}), initial_cash: num("c_cash") ?? 1000000, base_currency: val("c_cur")};
+  const fx = {}; if (num("c_fxhkd")) fx.HKD = num("c_fxhkd"); if (num("c_fxusd")) fx.USD = num("c_fxusd");
+  if (Object.keys(fx).length) c.account.fx_rates = fx; else delete c.account.fx_rates;
+  c.universe = {...(c.universe || {}), symbols: list(val("c_syms"))};
+  if (val("c_bench").trim()) c.universe.benchmark = val("c_bench").trim(); else delete c.universe.benchmark;
+  const srcs = {}; [["CN", "c_ds_cn"], ["HK", "c_ds_hk"], ["US", "c_ds_us"]].forEach(([m, id]) => { const l = list(val(id)); if (l.length) srcs[m] = l; });
+  c.data = {...(c.data || {}), sources: srcs, frequency: val("c_freq")};
+  if (!c.data.cache_dir) c.data.cache_dir = "data_cache";
+  const params = {};
+  document.querySelectorAll("#params input").forEach(i => {
+    const t = i.dataset.t; let v = i.value;
+    if (t === "number") v = v === "" ? undefined : Number(v); else if (t === "boolean") v = v === "true";
+    if (v !== undefined) params[i.dataset.k] = v;
+  });
+  c.strategy = {name: val("c_strat"), params};
+  c.backtest = {...(c.backtest || {}), fill_at: val("c_fill")};
+  if (val("c_start")) c.backtest.start = val("c_start"); else delete c.backtest.start;
+  if (val("c_end")) c.backtest.end = val("c_end"); else delete c.backtest.end;
+  const risk = {...(c.risk || {})};
+  document.querySelectorAll("#risk input").forEach(i => { if (i.value === "") delete risk[i.dataset.k]; else risk[i.dataset.k] = Number(i.value); });
+  c.risk = risk;
+  const t = {...(c.trading || {}), gateway: val("c_gw"), dry_run: val("c_dry") === "true"};
+  if (num("c_limit") !== undefined) t.limit_offset = num("c_limit"); else delete t.limit_offset;
+  const gwo = {};
+  val("c_gwopts").split("\n").forEach(line => {
+    const m = line.match(/^\s*([\w.]+)\s*=\s*(.*?)\s*$/); if (!m) return;
+    let v = m[2].replace(/^["']|["']$/g, "");
+    if (/^-?\d+(\.\d+)?$/.test(v)) v = Number(v); else if (v === "true" || v === "false") v = v === "true";
+    else if (v.includes(",") && m[1] === "markets") v = list(v);
+    gwo[m[1]] = v;
+  });
+  if (Object.keys(gwo).length) t.gateway_options = gwo; else delete t.gateway_options;
+  if (!t.state_file) t.state_file = `state/${val("c_name") || "my_strategy"}.json`;
+  c.trading = t;
+  return c;
+}
+async function saveCfg(thenRun) {
+  try {
+    if (!list(val("c_syms")).length) throw new Error("股票池不能为空");
+    const r = await api("/api/config/save", {name: val("c_name"), config: collect()});
+    await loadMeta(); await loadCfg(r.path); $("cfgsel").value = r.path;
+    $("savemsg").innerHTML = r.warning ? `<span class="warn">${esc(r.warning)}</span>` : `<span class="ok">✓ 已保存到 ${esc(r.path)}</span>`;
+    if (thenRun) { $("btsel").value = r.path; go("backtest"); }
+  } catch (e) { $("savemsg").innerHTML = `<span class="bad">保存失败：${esc(e.message)}</span>`; }
+}
+async function saveRaw() {
+  try {
+    const r = await api("/api/config/save", {name: val("c_name"), text: val("c_raw")});
+    await loadMeta(); await loadCfg(r.path);
+    $("savemsg").innerHTML = r.warning ? `<span class="warn">${esc(r.warning)}</span>` : `<span class="ok">✓ 已保存到 ${esc(r.path)}</span>`;
+  } catch (e) { $("savemsg").innerHTML = `<span class="bad">保存失败：${esc(e.message)}</span>`; }
+}
+
+// ------------------------------------------------------------------ backtest
+const ACTION_NAMES = {backtest: "回测", optimize: "参数优化", walkforward: "样本外检验", fetch: "下载数据"};
+async function runBt(action) {
+  const box = $("btjob"); box.classList.remove("hidden");
+  $("btjobtitle").textContent = ACTION_NAMES[action] + "：" + $("btsel").selectedOptions[0].text;
+  $("btlog").textContent = ""; $("btresult").innerHTML = ""; $("btlogbox").open = action !== "backtest";
+  try {
+    const job = await api("/api/run", {action, config: val("btsel"), start: val("bt_start"), end: val("bt_end"),
+      refresh: $("bt_refresh").checked, grid: val("bt_grid"), train: val("bt_train"), test: val("bt_test")});
+    const done = await follow(job.id, $("btlog"), $("btstatus"));
+    if (done.status !== "done") { $("btlogbox").open = true; const e = lastError($("btlog").textContent); if (e) $("btresult").innerHTML = `<div class="alert r">${esc(e)}</div>` + hint(e); return; }
+    showResult(action, done.result);
+  } catch (e) { $("btstatus").innerHTML = `<span class="bad">${esc(e.message)}</span>`; }
+}
+function hint(e) {
+  if (e.includes("未安装")) return '<p class="small">请到“开始”页的环境检查里安装对应数据源。</p>';
+  if (e.includes("数据源均失败")) return '<p class="small">检查网络：A股数据来自国内网站，开着海外代理可能失败；美股 yfinance 在国内可能需要代理。</p>';
+  return "";
+}
+function kpis(pairs) { return '<div class="grid k">' + pairs.map(([k, v]) => `<div class="kpi"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join("") + "</div>"; }
+function table(cols, rows, fmt) {
+  return '<div class="wrap"><table><tr>' + cols.map(c => `<th>${esc(c)}</th>`).join("") + "</tr>" +
+    rows.map(r => "<tr>" + r.map((v, i) => `<td>${esc(fmt ? fmt(v, cols[i]) : v)}</td>`).join("") + "</tr>").join("") + "</table></div>";
+}
+const fmtNum = (v) => typeof v === "number" ? (Math.abs(v) < 10 && !Number.isInteger(v) ? v.toFixed(4) : v) : v;
+const COLS = {annual_return: "年化收益", sharpe: "夏普", max_drawdown: "最大回撤", calmar: "卡玛", sortino: "索提诺", win_rate: "胜率", trades: "成交笔数",
+  train: "训练区间", test: "检验区间", train_sharpe: "训练夏普", test_return: "检验收益", test_sharpe: "检验夏普", test_max_drawdown: "检验回撤"};
+function showResult(action, r) {
+  const el = $("btresult");
+  if (action === "backtest" && r.metrics) {
+    const keep = ["累计收益", "年化收益", "最大回撤", "夏普比率", "卡玛比率", "年化超额", "交易胜率", "年换手(倍)", "总交易费用", "期末资产"];
+    const f = r.metrics.formatted.filter(([k]) => keep.includes(k));
+    el.innerHTML = kpis(f) + `<div class="row" style="margin:12px 0"><a class="b" href="${r.report}" target="_blank">在新窗口打开完整报告</a></div><iframe src="${r.report}"></iframe>`;
+  } else if (action === "optimize" && r.columns) {
+    el.innerHTML = '<div class="info small">按夏普从高到低排列。不要直接选第一名，优先选相邻参数也表现不错的“参数高原”。</div>' + table(r.columns.map(c => COLS[c] || c), r.rows, fmtNum);
+  } else if (action === "walkforward" && r.windows) {
+    const cols = r.windows.length ? Object.keys(r.windows[0]) : [];
+    el.innerHTML = "<h3>样本外拼接表现（更接近实盘）</h3>" + kpis(r.oos) + "<h3>每个窗口</h3>" + table(cols.map(c => COLS[c] || c), r.windows.map(w => cols.map(c => w[c])), fmtNum);
+  } else if (action === "fetch") {
+    el.innerHTML = '<div class="info small">数据已下载并缓存，详见日志。</div>'; $("btlogbox").open = true;
+  }
+}
+
+// ------------------------------------------------------------------ paper / live
+let SCHED = null;
+async function runPaper() {
+  $("ppjob").classList.remove("hidden"); $("pplog").textContent = "";
+  try { const j = await api("/api/run", {action: "paper", config: val("ppsel")}); await follow(j.id, $("pplog"), $("ppstatus")); }
+  catch (e) { $("ppstatus").innerHTML = `<span class="bad">${esc(e.message)}</span>`; }
+  loadState("pp");
+}
+async function schedule() {
+  if (SCHED) { await api("/api/job/stop", {id: SCHED}); SCHED = null; $("pp_sched").textContent = "开始每日自动运行"; return; }
+  const j = await api("/api/run", {action: "schedule", config: val("ppsel"), at: val("pp_at")});
+  SCHED = j.id; $("pp_sched").textContent = "停止自动运行";
+  $("ppjob").classList.remove("hidden"); $("pplog").textContent = "";
+  follow(j.id, $("pplog"), $("ppstatus")).then(() => { SCHED = null; $("pp_sched").textContent = "开始每日自动运行"; loadState("pp"); });
+}
+async function runLive(send) {
+  if (send) {
+    if (!$("lv_ck").checked || val("lv_confirm").trim() !== "确认下单") { alert("请勾选确认，并在输入框中输入“确认下单”"); return; }
+    if (!confirm("最后确认：现在向券商发送真实委托？")) return;
+  }
+  $("lvjob").classList.remove("hidden"); $("lvlog").textContent = "";
+  try {
+    const j = await api("/api/run", {action: send ? "live_send" : "live_dry", config: val("lvsel"), confirm: val("lv_confirm").trim()});
+    await follow(j.id, $("lvlog"), $("lvstatus"));
+  } catch (e) { $("lvstatus").innerHTML = `<span class="bad">${esc(e.message)}</span>`; }
+  $("lv_confirm").value = ""; $("lv_ck").checked = false;
+  loadState("lv");
+}
+function money(v) { return typeof v === "number" ? v.toLocaleString(undefined, {maximumFractionDigits: 2}) : v; }
+function spark(eq) {
+  if (eq.length < 2) return "";
+  const v = eq.map(e => e[1]), lo = Math.min(...v), hi = Math.max(...v), w = 600, h = 120;
+  const pts = v.map((x, i) => `${(i / (v.length - 1) * w).toFixed(1)},${(h - (x - lo) / ((hi - lo) || 1) * h).toFixed(1)}`).join(" ");
+  return `<svg viewBox="0 -4 ${w} ${h + 8}" style="width:100%;max-width:600px;height:auto"><polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2"/></svg>
+    <div class="small muted">${esc(eq[0][0].slice(0, 10))} → ${esc(eq.at(-1)[0].slice(0, 10))}</div>`;
+}
+async function loadState(prefix) {
+  const sel = prefix === "pp" ? "ppsel" : "lvsel", out = $(prefix + "state");
+  if (!val(sel)) return;
+  try {
+    const s = await api("/api/state?path=" + encodeURIComponent(val(sel)));
+    if (prefix === "lv") {
+      const t = s.trading || {};
+      $("lvinfo").innerHTML = `券商接口：<b>${esc(META.gateways[t.gateway || "sim"] || t.gateway)}</b>　配置中的模式：<b>${t.dry_run === false ? "真实下单" : "预演"}</b>　连接参数：${esc(JSON.stringify(t.gateway_options || {}))}<br>要修改券商或连接参数，请到“策略配置”页的“交易执行”部分。`;
+    }
+    const st = prefix === "pp" ? s.paper : s.live;
+    if (!st) { out.innerHTML = prefix === "pp" ? "还没有运行过模拟盘。点“运行一次”开始，第一次只会生成委托，下一个交易日才成交。" : "还没有实盘记录。"; return; }
+    let html = `<p class="small muted">策略 ${esc(st.strategy)} · 最新K线 ${esc(st.last_bar)} · 更新于 ${esc(st.updated)}</p>`;
+    const eq = st.equity || [];
+    if (st.broker) {
+      const b = st.broker, total = eq.length ? eq.at(-1)[1] : b.cash;
+      html += kpis([["总资产", money(total)], ["现金", money(b.cash)], ["累计收益", eq.length ? ((total / b.initial_cash - 1) * 100).toFixed(2) + "%" : "-"]]);
+      html += spark(eq);
+      html += "<h3>持仓</h3>" + (Object.keys(b.positions).length ? table(["代码", "数量", "成本", "现价", "盈亏"],
+        Object.values(b.positions).map(p => [p.symbol, p.quantity, p.avg_cost.toFixed(3), p.last_price, money((p.last_price - p.avg_cost) * p.quantity)])) : '<p class="muted">空仓</p>');
+      html += "<h3>下一交易日待执行委托</h3>" + (b.pending.length ? table(["代码", "方向", "数量", "备注"],
+        b.pending.map(o => [o.symbol, o.direction === "buy" ? "买入" : "卖出", o.quantity, o.tag])) : '<p class="muted">无</p>');
+    } else if (st.account) {
+      const a = st.account;
+      html += kpis([["总资产", money(a.total_value)], ["现金", money(a.cash)]]) + spark(eq);
+      html += "<h3>持仓</h3>" + table(["代码", "数量", "成本", "现价"], Object.values(a.positions || {}).map(p => [p.symbol, p.quantity, p.avg_cost, p.last_price]));
+      html += "<h3>最近委托</h3>" + table(["代码", "方向", "数量", "价格", "状态", "说明"], (st.orders || []).slice(-30).reverse().map(o => [o.symbol, o.direction, o.quantity, o.price ?? "市价", o.status, o.reason]));
+    }
+    if ((st.logs || []).length) html += `<details><summary class="small muted">策略日志</summary><pre class="log">${esc(st.logs.slice(-50).join("\n"))}</pre></details>`;
+    out.innerHTML = html;
+  } catch (e) { out.innerHTML = `<span class="bad">${esc(e.message)}</span>`; }
+}
+
+// ------------------------------------------------------------------ docs (tiny markdown renderer)
+function inline(s) {
+  return esc(s).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (m, t, u) => u.startsWith("http") ? `<a href="${u}" target="_blank">${t}</a>` : u.endsWith(".md") ? `<a href="#" onclick="showDoc('${u.split("#")[0]}');return false">${t}</a>` : t);
+}
+function md(text) {
+  const L = text.split("\n"), out = []; let i = 0;
+  while (i < L.length) {
+    let l = L[i];
+    if (l.startsWith("```")) { const buf = []; i++; while (i < L.length && !L[i].startsWith("```")) buf.push(L[i++]); i++; out.push(`<pre>${esc(buf.join("\n"))}</pre>`); continue; }
+    let m = l.match(/^(#{1,4})\s+(.*)/); if (m) { out.push(`<h${m[1].length + 1}>${inline(m[2])}</h${m[1].length + 1}>`); i++; continue; }
+    if (l.startsWith("|")) { const rows = []; while (i < L.length && L[i].startsWith("|")) rows.push(L[i++]);
+      const cells = r => r.replace(/^\||\|$/g, "").split("|").map(c => c.trim());
+      out.push('<div class="wrap"><table><tr>' + cells(rows[0]).map(c => `<th>${inline(c)}</th>`).join("") + "</tr>" +
+        rows.slice(2).map(r => "<tr>" + cells(r).map(c => `<td>${inline(c)}</td>`).join("") + "</tr>").join("") + "</table></div>"); continue; }
+    if (/^\s*([-*]|\d+\.)\s/.test(l)) { const items = []; const ordered = /^\s*\d+\./.test(l);
+      while (i < L.length && /^\s*([-*]|\d+\.)\s/.test(L[i])) items.push(L[i++].replace(/^\s*([-*]|\d+\.)\s+/, ""));
+      out.push(`<${ordered ? "ol" : "ul"}>` + items.map(x => `<li>${inline(x.replace(/^\[ \]\s*/, "☐ "))}</li>`).join("") + `</${ordered ? "ol" : "ul"}>`); continue; }
+    if (l.startsWith(">")) { const buf = []; while (i < L.length && L[i].startsWith(">")) buf.push(L[i++].replace(/^>\s?/, ""));
+      out.push(`<blockquote>${md(buf.join("\n"))}</blockquote>`); continue; }
+    if (/^---+$/.test(l.trim())) { out.push("<hr>"); i++; continue; }
+    if (!l.trim()) { i++; continue; }
+    const buf = []; while (i < L.length && L[i].trim() && !/^(#|```|\||>|\s*([-*]|\d+\.)\s)/.test(L[i])) buf.push(L[i++]);
+    if (!buf.length) { out.push(`<p>${inline(l)}</p>`); i++; continue; }
+    out.push(`<p>${inline(buf.join(" "))}</p>`);
+  }
+  return out.join("\n");
+}
+async function showDoc(name) {
+  try { const d = await api("/api/doc?name=" + encodeURIComponent(name)); $("doc").innerHTML = md(d.text); window.scrollTo(0, 0); }
+  catch (e) { $("doc").textContent = e.message; }
+}
+
+// ------------------------------------------------------------------ boot
+(async () => {
+  try { await loadMeta(); } catch (e) { document.body.insertAdjacentHTML("afterbegin", `<div class="alert r">无法连接本地服务：${esc(e.message)}</div>`); return; }
+  let p = "home"; try { p = localStorage.getItem("qa_page") || "home"; } catch (e) {}
+  go(p);
+  loadCfg(val("cfgsel"));
+})();
+</script>
+</body>
+</html>
