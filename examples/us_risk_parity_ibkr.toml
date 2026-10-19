@@ -1,0 +1,40 @@
+# 美股 ETF 风险平价（月度调仓），IBKR 执行
+# 先用 IBKR 模拟账户（TWS 端口 7497 / IB Gateway 端口 4002）跑通，再考虑实盘
+[account]
+initial_cash = 50_000
+base_currency = "USD"           # 美股账户按美元记账
+
+[data]
+sources = { US = ["yfinance", "ibkr", "alphavantage"] }
+cache_dir = "data_cache"
+[data.options.ibkr]
+host = "127.0.0.1"
+port = 7497
+client_id = 18
+
+[universe]
+symbols = ["SPY", "QQQ", "TLT", "IEF", "GLD", "DBC", "EFA"]
+benchmark = "SPY"
+
+[backtest]
+start = "2012-01-01"
+
+[strategy]
+name = "risk_parity"
+[strategy.params]
+vol_n = 60
+rebalance = "M"
+max_weight = 0.4
+
+[risk]
+max_drawdown_halt = 0.2
+
+[trading]
+gateway = "ibkr"
+dry_run = true
+limit_offset = 0.005
+state_file = "state/us_risk_parity_ibkr.json"
+[trading.gateway_options]
+host = "127.0.0.1"
+port = 7497                     # 7497=TWS模拟 7496=TWS实盘 4002=Gateway模拟 4001=Gateway实盘
+client_id = 17

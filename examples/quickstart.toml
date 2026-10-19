@@ -1,0 +1,37 @@
+# 离线快速体验：合成行情 + 多因子选股，无需联网、无需任何账户
+# 运行: qa backtest -c examples/quickstart.toml
+
+[account]
+initial_cash = 1_000_000
+base_currency = "CNY"
+
+[data]
+sources = "synthetic"          # 合成数据，仅用于熟悉流程，收益没有任何参考意义
+cache_dir = "data_cache"
+[data.options.synthetic]
+seed = 7
+
+[universe]
+symbols = ["600000", "600016", "600028", "600030", "600036", "600048", "600050", "600104",
+           "600276", "600309", "600519", "600585", "600690", "600887", "601012", "601318",
+           "601398", "601888", "000001", "000333", "000651", "000858", "002415", "300750"]
+benchmark = "600000"
+
+[backtest]
+start = "2019-01-01"
+end = "2024-12-31"
+fill_at = "next_open"          # 今日收盘出信号，明日开盘成交（无未来函数）
+
+[strategy]
+name = "multi_factor"
+[strategy.params]
+top_k = 6
+rebalance = "M"
+
+[risk]
+max_position_weight = 0.25
+stop_loss = 0.15
+max_drawdown_halt = 0.25
+
+[trading]
+state_file = "state/paper_quickstart.json"

@@ -1,0 +1,56 @@
+# A股 ETF 动量轮动（周度调仓）——最适合小资金入门的中低频策略之一
+# 回测:   qa backtest -c examples/cn_etf_rotation.toml
+# 模拟盘: qa paper    -c examples/cn_etf_rotation.toml   （每个交易日收盘后运行一次）
+# 实盘:   qa live     -c examples/cn_etf_rotation.toml   （默认 dry-run，只打印委托）
+
+[account]
+initial_cash = 200_000
+base_currency = "CNY"
+
+[data]
+# 按优先级依次尝试，失败自动切换到下一个；结果缓存在本地
+sources = { CN = ["akshare", "baostock", "tushare"] }
+cache_dir = "data_cache"
+validate = false               # true: 用下一个数据源交叉校验收盘价
+
+[universe]
+symbols = [
+  "510300",   # 沪深300ETF
+  "510500",   # 中证500ETF
+  "159915",   # 创业板ETF
+  "513100",   # 纳指ETF
+  "518880",   # 黄金ETF
+]
+benchmark = "000300.SH"        # 沪深300指数
+
+[backtest]
+start = "2016-01-01"
+fill_at = "next_open"
+
+[strategy]
+name = "momentum_rotation"
+[strategy.params]
+lookback = 25
+top_k = 1
+score = "r2_slope"
+rebalance = "W"
+abs_threshold = 0.0            # 所有品种动量都为负时 -> 转入避险资产
+safe_asset = "511010"          # 国债ETF
+
+[risk]
+max_position_weight = 1.0
+trailing_stop = 0.10
+
+[cost.CN]
+commission_rate = 0.0001       # ETF 佣金通常更低，按你的券商实际费率修改
+min_commission = 0.2           # 很多券商 ETF 免五
+stamp_tax_rate = 0.0           # ETF 无印花税
+
+[trading]
+gateway = "qmt"                # 实盘券商：qmt / easytrader / manual
+dry_run = true
+limit_offset = 0.01            # 市价单转成 ±1% 保护限价单
+state_file = "state/cn_etf_rotation.json"
+[trading.gateway_options]
+path = 'D:\国金QMT交易端\userdata_mini'   # miniQMT 的 userdata_mini 目录
+account_id = "你的资金账号"

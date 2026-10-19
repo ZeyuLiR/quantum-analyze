@@ -1,0 +1,45 @@
+# 港股 双均线趋势（富途 OpenD 模拟账户执行）
+[account]
+initial_cash = 300_000
+base_currency = "HKD"
+
+[data]
+sources = { HK = ["futu", "yfinance", "akshare", "ibkr"] }
+cache_dir = "data_cache"
+[data.options.futu]
+host = "127.0.0.1"
+port = 11111
+
+[universe]
+symbols = ["00700", "09988", "03690", "01810", "00941", "00005", "01299", "02318", "00388"]
+benchmark = "02800"             # 盈富基金
+
+[rules.HK]
+# 港股每手股数因股票而异，下单前请在券商 App 中核对
+lot_sizes = { "00700" = 100, "09988" = 100, "03690" = 100, "01810" = 200, "00941" = 500,
+              "00005" = 400, "01299" = 200, "02318" = 500, "00388" = 100, "02800" = 500 }
+
+[backtest]
+start = "2018-01-01"
+
+[strategy]
+name = "dual_ma"
+[strategy.params]
+fast = 20
+slow = 60
+trend_filter = 120
+max_positions = 4
+
+[risk]
+max_position_weight = 0.3
+trailing_stop = 0.15
+
+[trading]
+gateway = "futu"
+dry_run = true
+state_file = "state/hk_trend_futu.json"
+[trading.gateway_options]
+host = "127.0.0.1"
+port = 11111
+markets = ["HK"]
+paper = true                    # true=富途模拟账户；false=实盘（需 trade_password，建议用环境变量）
