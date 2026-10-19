@@ -34,5 +34,8 @@ qa = "quantum_analyze.cli:main"
 [tool.setuptools.packages.find]
 include = ["quantum_analyze*"]
 
+[tool.setuptools.package-data]
+quantum_analyze = ["webui/static/*"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]

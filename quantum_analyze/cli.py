@@ -10,6 +10,7 @@ Commands
   live                  run one live cycle through a broker gateway
   schedule              run paper/live every trading day at a fixed time
   dashboard             local web dashboard for accounts and reports
+  ui                    graphical interface in the browser (all of the above)
 """
 from __future__ import annotations
 
@@ -92,6 +93,11 @@ def cmd_optimize(args) -> None:
                         **_bt_kwargs(cfg))
     pd.set_option("display.width", 200)
     print(table.head(args.top).to_string())
+    if args.out:
+        out = cfg.resolve(args.out)
+        out.mkdir(parents=True, exist_ok=True)
+        table.to_csv(out / "optimize.csv", index=False)
+        print(f"\n结果: {(out / 'optimize.csv').resolve()}")
     print("\n提示: 样本内寻优必然过拟合，请用 `qa walkforward` 检验样本外表现，并优先选择“参数高原”而不是单个尖峰。")
 
 
@@ -113,6 +119,14 @@ def cmd_walkforward(args) -> None:
     print("\n样本外拼接表现:")
     for k, v in format_metrics(out["oos_metrics"]):
         print(f"  {k:<10s} {v}")
+    if args.out:
+        from .engine import write_json
+        d = cfg.resolve(args.out)
+        d.mkdir(parents=True, exist_ok=True)
+        out["windows"].to_csv(d / "walkforward.csv", index=False)
+        write_json(d / "walkforward.json", {"windows": out["windows"].to_dict("records"),
+                                            "oos": format_metrics(out["oos_metrics"])})
+        print(f"\n结果: {(d / 'walkforward.json').resolve()}")
 
 
 def cmd_fetch(args) -> None:
@@ -174,6 +188,11 @@ def cmd_schedule(args) -> None:
             logging.getLogger("quantum_analyze").exception("运行失败: %s", e)
 
 
+def cmd_ui(args) -> None:
+    from .webui.server import serve
+    serve(args.root, port=args.port, open_browser=not args.no_browser)
+
+
 def cmd_dashboard(args) -> None:
     from .dashboard import serve
     root = Path(args.config).parent if args.config else Path(args.root)
@@ -201,6 +220,7 @@ def main(argv=None) -> None:
         sp = add(name, fn)
         sp.add_argument("--start"); sp.add_argument("--end")
         sp.add_argument("--grid", help='参数网格，如 "fast=5,10,20;slow=30,60"')
+        sp.add_argument("--out", help="把结果表保存到该文件夹（相对于配置文件）")
         sp.add_argument("--objective", default="sharpe",
                         choices=["sharpe", "annual_return", "calmar", "sortino"])
         if name == "optimize":
@@ -220,6 +240,11 @@ def main(argv=None) -> None:
     sp.add_argument("--mode", choices=["paper", "live"], default="paper")
     sp.add_argument("--at", default="15:30", help="每日运行时间 HH:MM")
     sp.add_argument("--state"); sp.set_defaults(until=None, send=False, dry_run=False)
+    sp = sub.add_parser("ui", help="图形界面（浏览器中操作）")
+    sp.add_argument("--root", default=".", help="工作目录（默认当前目录）")
+    sp.add_argument("--port", type=int, default=8501)
+    sp.add_argument("--no-browser", action="store_true", help="不自动打开浏览器")
+    sp.set_defaults(fn=cmd_ui)
     sp = sub.add_parser("dashboard", help="本地网页看板")
     sp.add_argument("-c", "--config"); sp.add_argument("--root", default=".")
     sp.add_argument("--port", type=int, default=8050); sp.set_defaults(fn=cmd_dashboard)

@@ -46,7 +46,7 @@ def _save_state(path: Path, state: dict) -> None:
 class PaperTrader:
     def __init__(self, cfg: AppConfig, state_file: Optional[str] = None):
         self.cfg = cfg
-        self.state_path = cfg.resolve(state_file or cfg.trading.get("state_file", "state/paper.json"))
+        self.state_path = cfg.resolve(state_file) if state_file else cfg.state_path("paper")
 
     def run(self, data: Optional[dict] = None, until: Optional[str] = None) -> dict:
         cfg = self.cfg
@@ -108,7 +108,7 @@ class LiveTrader:
         self.gateway_name = t.get("gateway", "sim")
         self.gateway = gateway
         self.dry_run = t.get("dry_run", True) if dry_run is None else dry_run
-        self.state_path = cfg.resolve(t.get("state_file", f"state/live_{self.gateway_name}.json"))
+        self.state_path = cfg.state_path("live")
 
     def run(self, data: Optional[dict] = None) -> dict:
         from .gateway.base import LiveAccount

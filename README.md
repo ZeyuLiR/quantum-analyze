@@ -16,9 +16,14 @@
 | 寻优 | 网格搜索、滚动 walk-forward 样本外检验 |
 | 模拟盘 | 内置撮合，无需账户；每天运行一次，状态持久化；与回测逐笔一致（有测试保证） |
 | 实盘 | IBKR、富途、老虎、长桥、miniQMT、easytrader、Ptrade（导出委托）、手工 CSV；默认 dry-run |
+| 图形界面 | `qa ui` / 双击 `start_ui.bat`：浏览器里配置策略、回测、寻优、模拟盘、实盘（实盘需二次确认），一键安装数据源 |
 | 看板 | `qa dashboard` 本地网页查看账户、持仓、委托和回测报告 |
 
 ## 快速开始
+
+**图形界面（推荐新手）**：安装 Python 后，双击 `start_ui.bat`（Mac 双击 `start_ui.command`），首次会自动安装，然后在浏览器里完成回测、调参、模拟盘、实盘的全部操作。已安装的话也可以运行 `qa ui`。
+
+**命令行**：
 
 ```bash
 pip install -e .            # 只依赖 numpy + pandas
@@ -64,6 +69,7 @@ quantum_analyze/
   analysis/    metrics.py 绩效指标 · report.py HTML 报告
   engine.py    事件引擎   risk.py 风控   optimize.py 寻优   trader.py 模拟盘/实盘
   config.py    TOML 配置  cli.py 命令行  dashboard.py 本地看板
+  webui/       图形界面（server.py 本地服务 · static/index.html 页面）
 tests/         离线测试（python -m pytest）
 ```
 

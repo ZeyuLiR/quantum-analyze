@@ -49,6 +49,19 @@ class AppConfig:
             return p
         return self.path.parent / p
 
+    def state_path(self, mode: str) -> Path:
+        """Paper and live keep separate state files: ``state_file`` is the paper one and
+        the live one gets a ``_live`` suffix unless ``live_state_file`` is given."""
+        t = self.trading
+        if mode == "paper":
+            return self.resolve(t.get("state_file", "state/paper.json"))
+        if "live_state_file" in t:
+            return self.resolve(t["live_state_file"])
+        if "state_file" in t:
+            p = self.resolve(t["state_file"])
+            return p.with_name(f"{p.stem}_live{p.suffix}")
+        return self.resolve(f"state/live_{t.get('gateway', 'sim')}.json")
+
     # ---------------------------------------------------------------- builders
     @property
     def symbols(self) -> list[str]:

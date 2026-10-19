@@ -16,3 +16,5 @@ examples/state/
 # secrets
 .env
 *.secret.toml
+# user configs created by the UI (may contain account details)
+configs/

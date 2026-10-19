@@ -58,6 +58,9 @@ class BacktestResult:
         self.equity.to_csv(p / "equity.csv")
         self.trades.to_csv(p / "trades.csv", index=False)
         self.orders.to_csv(p / "orders.csv", index=False)
+        write_json(p / "metrics.json", {"strategy": self.strategy, "params": self.params,
+                                        "metrics": self.metrics,
+                                        "formatted": format_metrics(self.metrics)})
         return str(write_html_report(self, p / "report.html"))
 
 
@@ -142,6 +145,25 @@ class Engine:
         metrics = compute_metrics(eq["total"], trades, benchmark) if len(eq) else {}
         return BacktestResult(self.strategy.name, eq, trades, orders, metrics, benchmark,
                               self.ctx.logs, self.risk.events, dict(self.strategy.params))
+
+
+def write_json(path, obj) -> None:
+    """JSON without NaN/Infinity (browsers reject them)."""
+    import json
+    import math
+
+    def clean(v):
+        if isinstance(v, float) and not math.isfinite(v):
+            return None
+        if isinstance(v, dict):
+            return {str(k): clean(x) for k, x in v.items()}
+        if isinstance(v, (list, tuple)):
+            return [clean(x) for x in v]
+        if hasattr(v, "item"):
+            return clean(v.item())
+        return v
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(clean(obj), f, ensure_ascii=False, indent=1, default=str)
 
 
 def _calendar(data: dict[str, pd.DataFrame]) -> pd.DatetimeIndex:
