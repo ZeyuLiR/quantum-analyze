@@ -44,10 +44,12 @@ qa dashboard   -c examples/cn_etf_rotation.toml
 | `examples/cn_etf_rotation.toml` | A股 ETF | 动量轮动 | miniQMT |
 | `examples/cn_multi_factor.toml` | A股个股 | 多因子 + 大盘择时 | miniQMT |
 | `examples/hk_trend_futu.toml` | 港股 | 双均线 | 富途（模拟账户） |
+| `examples/us_etf_yfinance.toml` | 美股 ETF | 动量轮动（免费数据） | — |
 | `examples/us_risk_parity_ibkr.toml` | 美股 ETF | 风险平价 | IBKR（模拟端口） |
 
 ## 文档
 
+- [新手教程](docs/新手教程.md)：从安装 Python 开始，一步步跑出第一份真实数据回测报告。
 - [策略说明书](docs/策略说明书.md)：每个策略的原理、信号、参数、适用场景与风险，风控说明，研究与上线流程，自定义策略，实盘接入。
 - [实盘接入说明](docs/实盘接入说明.md)：各券商/数据源的安装与配置要点，以及需要在你自己电脑上核对的接口细节。
 

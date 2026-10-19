@@ -1,0 +1,28 @@
+# 美股 ETF 动量轮动（月度调仓），只用免费的 yfinance 数据，适合新手回测
+# 运行: qa backtest -c examples/us_etf_yfinance.toml
+[account]
+initial_cash = 20_000
+base_currency = "USD"
+
+[data]
+sources = { US = ["yfinance"] }
+cache_dir = "data_cache"
+
+[universe]
+symbols = ["SPY", "QQQ", "EFA", "TLT", "GLD"]
+benchmark = "SPY"
+
+[backtest]
+start = "2010-01-01"
+
+[strategy]
+name = "momentum_rotation"
+[strategy.params]
+lookback = 60
+top_k = 2
+score = "return"
+rebalance = "M"
+safe_asset = "SHY"              # 所有品种动量为负时持有短债 ETF
+
+[risk]
+max_drawdown_halt = 0.25

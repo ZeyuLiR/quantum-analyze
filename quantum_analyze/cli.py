@@ -70,7 +70,7 @@ def cmd_backtest(args) -> None:
     res = run_backtest(strategy, data, start=start, end=end, benchmark=bench, **_bt_kwargs(cfg))
     print(res.summary())
     out = cfg.resolve(args.out or cfg.backtest.get("output", f"reports/{strategy.name}"))
-    print(f"\n报告: {res.save(str(out))}")
+    print(f"\n报告: {Path(res.save(str(out))).resolve()}")
 
 
 def _warmup(start):
@@ -227,7 +227,14 @@ def main(argv=None) -> None:
     args = p.parse_args(argv)
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO,
                         format="%(asctime)s %(levelname)s %(message)s", stream=sys.stderr)
-    args.fn(args)
+    from .data.base import DataSourceError
+    try:
+        args.fn(args)
+    except (DataSourceError, FileNotFoundError, ValueError, KeyError) as e:
+        if args.verbose:
+            raise
+        print(f"\n出错了: {e}\n（加 -v 参数可查看详细报错）", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
